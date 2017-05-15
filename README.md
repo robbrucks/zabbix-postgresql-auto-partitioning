@@ -10,7 +10,7 @@ them a bit more meaningful.
 
 This implementation of partitioning is nice because it will automatically
 create new partitions as it needs them, but it will **not** automatically drop
-them. You need to be sure to run the script `daily\_partition\_cleanup.sh` on a
+them. You need to be sure to run the script `daily_partition_cleanup.sh` on a
 daily basis to purge expired partitions.
 
 These functions are *only* meant to be used with a PostgreSQL Zabbix DB.
