@@ -19,12 +19,8 @@ dbowner=zabbix
 #   You can change the defaults further down in section "add_partition_triggers"
 #   
 #   Settings available:
-#     "hour"  - create hourly partitions (not recommended)
 #     "day"   - create daily partitions
 #     "month" - create monthly partitions
-#
-#   Hourly partitions are available, but not recommended. They were
-#   added to expedite testing of the cleanup process.
 #
 #####################################################################
 
@@ -80,14 +76,12 @@ create_trigger_function () {
       BEGIN
         selector = TG_ARGV[0];
      
-        IF selector = 'hour' THEN
-          timeformat := 'YYYY_MM_DD_HH24';
-        ELSIF selector = 'day' THEN
+        IF selector = 'day' THEN
           timeformat := 'YYYY_MM_DD';
         ELSIF selector = 'month' THEN
           timeformat := 'YYYY_MM';
         ELSE
-          RAISE EXCEPTION 'zbx_part_trigger_func: Specify "hour", "day", or "month" for interval selector instead of "%"', selector;
+          RAISE EXCEPTION 'zbx_part_trigger_func: Specify "day" or "month" for interval selector instead of "%"', selector;
         END IF;
      
         _interval := '1 ' || selector;
@@ -141,23 +135,22 @@ create_cleanup_function () {
         min_ts        timestamp;
     
       BEGIN
-        IF partition_interval NOT IN ('hour','day','month') THEN
-          RAISE EXCEPTION 'Please specify "hour", "day", or "month" for partition_interval instead of "%"', partition_interval;
+        IF partition_interval NOT IN ('day','month') THEN
+          RAISE EXCEPTION 'Please specify "day" or "month" for partition_interval instead of "%"', partition_interval;
         END IF;
         IF retention_age < ('1 ' || partition_interval)::interval THEN
           RAISE EXCEPTION 'Retention age "%" cannot be less than "1 %"', retention_age, partition_interval;
         END IF;
 
-        min_ts := date_trunc('hour', NOW() - retention_age);
+        min_ts := date_trunc('day', NOW() - retention_age);
         RAISE NOTICE 'Dropping "%" partitions older than "%" (created before %)', partition_interval, retention_age, min_ts;
 
         FOR result IN SELECT * FROM pg_tables WHERE schemaname = quote_ident(prefix) LOOP
 
           table_ts_len := length(substring(result.tablename from '[0-9_]*$'));
-          table_ts := to_timestamp(substring(result.tablename from '[0-9_]*$'), 'YYYY_MM_DD_HH24');
+          table_ts := to_timestamp(substring(result.tablename from '[0-9_]*$'), 'YYYY_MM_DD');
 
-          IF ( table_ts_len = 13 AND partition_interval = 'hour' )
-          OR ( table_ts_len = 10 AND partition_interval = 'day' )
+          IF ( table_ts_len = 10 AND partition_interval = 'day' )
           OR ( table_ts_len = 7  AND partition_interval = 'month' ) THEN
 
             IF table_ts < min_ts THEN

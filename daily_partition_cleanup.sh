@@ -2,7 +2,6 @@
 
 dbname=zabbix
 
-hourly_retention='48 hours'
 daily_retention='31 days'
 monthly_retention='12 months'
 
@@ -14,8 +13,6 @@ cleanup_log_retention=31   # days
 #
 # This script will drop old history and trend partitions from
 # the zabbix database based on retentions set above.
-#
-# ** Hourly partitions are only for testing **
 #
 # Adapted from:
 #   https://www.zabbix.org/wiki/Docs/howto/zabbix2_postgresql_autopartitioning
@@ -40,7 +37,6 @@ main() {
   echo "Logfile.: ${logfile}"
   echo "Settings:"
   echo "   dbname=${dbname}"
-  echo "   hourly_retention='${hourly_retention}'"
   echo "   daily_retention='${daily_retention}'"
   echo "   monthly_retention='${monthly_retention}'"
   echo "   cleanup_log_retention=${cleanup_log_retention}"
@@ -54,7 +50,6 @@ drop_old_partitions () {
   date +"%Y-%m-%d %H:%M:%S %Z"
   echo
   psql -Xe -v ON_ERROR_STOP=on ${dbname} <<EOF
-    -- SELECT zbx_part_cleanup_func('${hourly_retention}', 'hour');
     SELECT zbx_part_cleanup_func('${daily_retention}', 'day');
     SELECT zbx_part_cleanup_func('${monthly_retention}', 'month');
 EOF
@@ -74,7 +69,7 @@ EOF
   Log file: ${logfile}
   Date....: `date +'%Y-%m-%d %H:%M:%S %Z'`
 
-  Have DBA investigate!!!
+  Please investigate!!!
 
 
   Tail of log:
@@ -110,14 +105,12 @@ if [[ ! -d ${logdir} ]]; then
 fi
 
 # non-interactive?
-if [[ $(tty) == "not a tty" ]]; then # run non-interactively
-  exec 3>&2  # save stderr descriptor to send error emails from cron
-  # everything else to log file
-  main >> ${logfile} 2>&1
-else                                 # run interactively
-  exec 3>/dev/null  # no need to send email errors
-  # send to both stdout and logfile
-  main 2>&1 | tee -a ${logfile}
+if [[ $(tty) == "not a tty" ]]; then # run non-interactively (i.e. cron)
+  exec 3>&2                          # save stderr descriptor to send error emails from cron
+  main >> ${logfile} 2>&1            # everything else to log file
+else                                 # run interactively (i.e. human)
+  exec 3>/dev/null                   # no need to send email errors
+  main 2>&1 | tee -a ${logfile}      # send to both stdout and logfile
 fi
-exec 3>&-
+exec 3>&- # close descriptor
 

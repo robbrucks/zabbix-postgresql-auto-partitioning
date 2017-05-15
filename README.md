@@ -15,6 +15,9 @@ daily basis to purge expired partitions.
 
 These functions are *only* meant to be used with a PostgreSQL Zabbix DB.
 
+As with anything from the internet, thoroughly test it before using it in
+production.
+
 ## The scripts
 
 * **install\_partitioning.sh:** installs the partitioning objects
@@ -57,11 +60,6 @@ These functions are *only* meant to be used with a PostgreSQL Zabbix DB.
   error occurs, then it will write an error message to stderr so an email
   can be sent from cron (don't forget to set `MAILTO` in the crontab)
 
-### Hourly Partitions
-:x: I modified the functions to support "hourly" partitions, but this change was
-only added to enable expedited functional testing and **is not recommended for
-production systems.**
-
 ---
 ## The Scripts
 
@@ -88,7 +86,10 @@ the auto-partitioning.  The child partition tables and cleanup function are
 left in place.
 
 #### BE SURE you re-enable the Zabbix housekeeper settings for history and trends if they have been disabled.
+After uninstalling the partitioning, be sure that the Zabbix "housekeeper" is
+enabled so that it will purge old stats from the tables.
 
+#### Manual Uninstallation Steps
 This script will **NOT** drop the existing partitions or the cleanup function.
 This allows Zabbix to continue to query the data in the partition tables, but
 no new data will be written to the partitions and no new partitions will be
