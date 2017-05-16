@@ -170,9 +170,11 @@ only exist on the active node of the cluster (unless PG has crashed hard on
 an inactive node).
 
 * Redhat / Centos based distros:
+
   `0 0 * * *  test -S /tmp/.s.PGSQL.5432 && daily_partition_cleanup.sh`
   
 * Debian / Ubuntu based distros:
+
   `0 0 * * *  test -S /var/run/postgresql/.s.PGSQL.5432 && daily_partition_cleanup.sh`
   
 
