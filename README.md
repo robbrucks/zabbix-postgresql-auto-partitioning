@@ -162,8 +162,10 @@ partitions.
 
 If you deal with a clustered PostgreSQL DB under Pacemaker or some other
 OS clustering tool you need to make your crontab a little more intelligent.
-This is because you don't want the script to email errors to you every day
-from inactive nodes since PG is not running on them.
+This is because you don't want the script to run on inactive nodes and then
+email you with connection errors every day.
+
+You need to set up crontab to only run on the active node of the cluster.
 
 This is easily done by testing if the PostgreSQL socket file exists. It will
 only exist on the active node of the cluster (unless PG has crashed hard on
