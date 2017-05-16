@@ -158,4 +158,21 @@ the cleanup will be dropping partitions. It is recommended to run the cleanup
 script just before the backup so you don't waste resources backing up obsolete
 partitions.
 
+### Running the cleanup script under cron against PostgreSQL on a cluster
+
+If you deal with a clustered PostgreSQL DB under Pacemaker or some other
+OS clustering tool you need to make your crontab a little more intelligent.
+This is because you don't want the script to email errors to you every day
+from inactive nodes since PG is not running on them.
+
+This is easily done by testing if the PostgreSQL socket file exists. It will
+only exist on the active node of the cluster (unless PG has crashed hard on
+an inactive node).
+
+* Redhat / Centos based distros:
+  `0 0 * * *  test -S /tmp/.s.PGSQL.5432 && daily_partition_cleanup.sh`
+  
+* Debian / Ubuntu based distros:
+  `0 0 * * *  test -S /var/run/postgresql/.s.PGSQL.5432 && daily_partition_cleanup.sh`
+  
 
