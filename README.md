@@ -158,7 +158,7 @@ the cleanup will be dropping partitions. It is recommended to run the cleanup
 script just before the backup so you don't waste resources backing up obsolete
 partitions.
 
-### Crontab setup for PostgreSQL on a active/passive cluster
+### Crontab setup for PostgreSQL on an active/passive cluster
 
 If you have PostgreSQL clustered under Pacemaker or some other
 OS clustering tool then you need to make your crontab a little more intelligent
