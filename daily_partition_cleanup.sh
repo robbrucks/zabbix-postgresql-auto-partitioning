@@ -49,7 +49,7 @@ drop_old_partitions () {
   echo 'drop_old_partitions --------------------------------------------'
   date +"%Y-%m-%d %H:%M:%S %Z"
   echo
-  psql -Xe -v ON_ERROR_STOP=on ${dbname} <<EOF
+  psql -Xqte -v ON_ERROR_STOP=on ${dbname} <<EOF
     SELECT zbx_part_cleanup_func('${daily_retention}', 'day');
     SELECT zbx_part_cleanup_func('${monthly_retention}', 'month');
 EOF
