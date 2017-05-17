@@ -74,22 +74,24 @@ create_trigger_function () {
         create_index_part text;
 
       BEGIN
-        selector = TG_ARGV[0];
+        BEGIN
+          selector = TG_ARGV[0];
      
-        IF selector = 'day' THEN
-          timeformat := 'YYYY_MM_DD';
-        ELSIF selector = 'month' THEN
-          timeformat := 'YYYY_MM';
-        ELSE
-          RAISE EXCEPTION 'zbx_part_trigger_func: Specify "day" or "month" for interval selector instead of "%"', selector;
-        END IF;
+          IF selector = 'day' THEN
+            timeformat := 'YYYY_MM_DD';
+          ELSIF selector = 'month' THEN
+            timeformat := 'YYYY_MM';
+          ELSE
+            RAISE EXCEPTION 'zbx_part_trigger_func: Specify "day" or "month" for interval selector instead of "%"', selector;
+          END IF;
      
-        _interval := '1 ' || selector;
-        tablename :=  TG_TABLE_NAME || '_p' || to_char(to_timestamp(NEW.clock), timeformat);
+          _interval := '1 ' || selector;
+          tablename :=  TG_TABLE_NAME || '_p' || to_char(to_timestamp(NEW.clock), timeformat);
      
-        EXECUTE 'INSERT INTO ' || quote_ident(prefix) || '.' || quote_ident(tablename) || ' SELECT ($1).*' USING NEW;
-        RETURN NULL;
+          EXECUTE 'INSERT INTO ' || quote_ident(prefix) || '.' || quote_ident(tablename) || ' SELECT ($1).*' USING NEW;
+          RETURN NULL;
      
+        /* trap when table partition does not yet exist: create the table partition and then insert */
         EXCEPTION
           WHEN undefined_table THEN
             startdate := extract(epoch FROM date_trunc(selector, to_timestamp(NEW.clock)));
@@ -105,6 +107,12 @@ create_trigger_function () {
             --insert it again
             EXECUTE 'INSERT INTO ' || quote_ident(prefix) || '.' || quote_ident(tablename) || ' SELECT ($1).*' USING NEW;
             RETURN NULL;
+        END;
+
+      /* trap race condition where a parallel thread beat us creating the table partition: re-try the original insert */
+      EXCEPTION
+        WHEN duplicate_table THEN
+          EXECUTE 'INSERT INTO ' || quote_ident(prefix) || '.' || quote_ident(tablename) || ' SELECT ($1).*' USING NEW;
       END;
     $BODY$
     LANGUAGE plpgsql VOLATILE
@@ -203,7 +211,18 @@ EOF
 # SETUP #
 #########
 
-logfile=install_partitioning.$(date "+%Y-%m-%d_%H.%M").log
+abspath=`cd ${0%/*};pwd`     # get absolute path of script directory
+logdir=${abspath}/logs       # set log directory under script directory
+logfile=${logdir}/install_partitioning.$(date "+%Y-%m-%d_%H.%M").log
+
+# create log subdirectory if does not exist
+if [[ ! -d ${logdir} ]]; then
+  mkdir -p ${logdir}
+  if [[ $? -ne 0 ]]; then
+    echo "ERROR: unable to create log directory \"${logdir}\"" >&2
+    exit 2
+  fi
+fi
 
 main 2>&1 | tee -a ${logfile}
 

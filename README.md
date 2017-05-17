@@ -181,4 +181,15 @@ connection test.
 
   `59 23 * * *  test -S /var/run/postgresql/.s.PGSQL.5432 && daily_partition_cleanup.sh`
   
+### Race Conditions when Creating the Partitions
+
+The original trigger function from the site above does not handle race
+conditions where two or more threads are all trying to create a new partition
+at the same time. In the original code the losing threads will just error out
+and discard the inserts.
+
+I've added exception processing to handle the race condition that allows the
+losing threads to re-try inserting the data.
+
+This is a good example of nested exception traps in PL/pgSQL.
 

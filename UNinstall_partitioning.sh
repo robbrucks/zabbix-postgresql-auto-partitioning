@@ -157,7 +157,19 @@ main tables.
 ============================================================
 '
 
-logfile=UNinstall_partitioning.$(date "+%Y-%m-%d_%H.%M").log
+
+abspath=`cd ${0%/*};pwd`     # get absolute path of script directory
+logdir=${abspath}/logs       # set log directory under script directory
+logfile=${logdir}/UNinstall_partitioning.$(date "+%Y-%m-%d_%H.%M").log
+
+# create log subdirectory if does not exist
+if [[ ! -d ${logdir} ]]; then
+  mkdir -p ${logdir}
+  if [[ $? -ne 0 ]]; then
+    echo "ERROR: unable to create log directory \"${logdir}\"" >&2
+    exit 2
+  fi
+fi
 
 main 2>&1 | tee -a ${logfile}
 
