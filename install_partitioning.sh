@@ -100,7 +100,7 @@ create_trigger_function () {
                               || ' (CHECK ((clock >= ' || quote_literal(startdate)
                               || ' AND clock < ' || quote_literal(enddate)
                               || '))) INHERITS (' || TG_TABLE_NAME || ')';
-            create_index_part := 'CREATE INDEX ' || quote_ident(tablename)
+            create_index_part := 'CREATE INDEX IF NOT EXISTS ' || quote_ident(tablename)
                               || '_1 on ' || quote_ident(prefix) || '.' || quote_ident(tablename) || '(itemid,clock)';
             EXECUTE create_table_part;
             EXECUTE create_index_part;
