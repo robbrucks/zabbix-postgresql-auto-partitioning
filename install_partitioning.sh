@@ -113,6 +113,7 @@ create_trigger_function () {
       EXCEPTION
         WHEN duplicate_table THEN
           EXECUTE 'INSERT INTO ' || quote_ident(prefix) || '.' || quote_ident(tablename) || ' SELECT ($1).*' USING NEW;
+          RETURN NULL;
       END;
     $BODY$
     LANGUAGE plpgsql VOLATILE
